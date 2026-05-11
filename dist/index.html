@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Cafeteria Manager</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <script type="module" crossorigin src="/assets/index-De1Pq_Q8.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-_L96qTEK.css">
+  </head>
+  <body>
+    <!-- 2D Canvas Container -->
+    <canvas id="game-canvas"></canvas>
+
+    <!-- UI Overlay -->
+    <div id="ui-layer">
+      
+      <!-- Start Screen -->
+      <div id="start-screen" class="screen">
+        <div class="glass-panel">
+          <h1>Cafeteria Manager</h1>
+          <p>Manage your budget, keep students happy, reduce waste, and survive 10 days!</p>
+          <p class="controls-info">Controls: WASD or Arrows to move.<br>Press E to interact.</p>
+          <button id="start-btn" class="primary-btn">Start Game</button>
+        </div>
+      </div>
+
+      <!-- End of Day Screen -->
+      <div id="end-day-screen" class="screen hidden">
+        <div class="glass-panel">
+          <h2 id="end-day-title">End of Day 1</h2>
+          <div class="stats-grid">
+            <div class="stat-box">
+              <span class="stat-label">Daily Budget</span>
+              <span id="end-budget-val" class="stat-val">$0</span>
+            </div>
+            <div class="stat-box">
+              <span class="stat-label">Happiness</span>
+              <span id="end-happiness-val" class="stat-val">0%</span>
+            </div>
+            <div class="stat-box">
+              <span class="stat-label">Sustainability</span>
+              <span id="end-sustainability-val" class="stat-val">0%</span>
+            </div>
+            <div class="stat-box">
+              <span class="stat-label">Food Waste</span>
+              <span id="end-waste-val" class="stat-val">0 kg</span>
+            </div>
+          </div>
+          <div class="stats-grid" style="margin-top: 10px;">
+            <div class="stat-box">
+              <span class="stat-label">Served</span>
+              <span id="end-served-val" class="stat-val">0</span>
+            </div>
+            <div class="stat-box">
+              <span class="stat-label">Angry/Left</span>
+              <span id="end-angry-val" class="stat-val text-red">0</span>
+            </div>
+            <div class="stat-box">
+              <span class="stat-label">No Food</span>
+              <span id="end-nofood-val" class="stat-val text-red">0</span>
+            </div>
+          </div>
+          <button id="next-day-btn" class="primary-btn">Continue to Next Day</button>
+        </div>
+      </div>
+
+      <!-- Game Over Screen -->
+      <div id="game-over-screen" class="screen hidden">
+        <div class="glass-panel">
+          <h2>Evaluation Complete</h2>
+          <p id="final-score-text">You survived!</p>
+          <button id="restart-btn" class="primary-btn">Play Again</button>
+        </div>
+      </div>
+
+      <!-- HUD -->
+      <div id="hud" class="hidden">
+        <div class="top-bar">
+          <div class="hud-item glass-pill">
+            <span class="icon">📅</span>
+            <span id="day-display">Day 1</span>
+            <span id="time-display" class="small-text">Morning</span>
+          </div>
+          <div class="hud-item glass-pill">
+            <span class="icon">💰</span>
+            <span id="budget-display">$1000</span>
+          </div>
+          <div class="hud-item glass-pill" title="Happiness">
+            <span class="icon">😊</span>
+            <div class="progress-bar-bg">
+              <div id="happiness-fill" class="progress-bar-fill"></div>
+            </div>
+            <span id="happiness-display">50%</span>
+          </div>
+          <div class="hud-item glass-pill" title="Sustainability">
+            <span class="icon">🌱</span>
+            <div class="progress-bar-bg">
+              <div id="sustainability-fill" class="progress-bar-fill" style="background:var(--success);"></div>
+            </div>
+            <span id="sustainability-display">50%</span>
+          </div>
+          <div class="hud-item glass-pill" title="Food Waste">
+            <span class="icon">🗑️</span>
+            <span id="waste-display">0 kg</span>
+          </div>
+        </div>
+
+        <div id="interaction-prompt" class="hidden">
+          <span class="prompt-key">E</span>
+          <span id="prompt-text">Interact</span>
+        </div>
+      </div>
+
+      <!-- Zone Modals -->
+      <div id="office-modal" class="screen modal-screen hidden">
+        <div class="glass-panel">
+          <h2>Office Manager</h2>
+          <div id="yesterday-summary" class="summary-box hidden">
+            <h3>Yesterday's Report</h3>
+            <p>Students: <span id="yest-students">0 / 0</span> | Leftovers: <span id="yest-leftovers">0</span></p>
+            <p>Waste Cost: $<span id="yest-waste">0</span> | Happiness: <span id="yest-happiness">+0</span>%</p>
+            <p class="student-feedback">💬 "<span id="student-comment">No comments yet.</span>"</p>
+          </div>
+          <p>Expected Students today: <strong id="expected-students-display">0</strong></p>
+          <div class="options-group">
+            <h3>Select Supplier</h3>
+            <button id="supplier-local-btn" class="secondary-btn">Local Farms (+$ / +Eco)</button>
+            <button id="supplier-import-btn" class="secondary-btn">Cheap Imports (-$ / -Eco)</button>
+            <p>Current Supplier: <span id="current-supplier-display">None</span></p>
+          </div>
+          <div class="options-group">
+            <h3>Goal Priority</h3>
+            <div class="slider-container">
+              <span class="small-text">Profit</span>
+              <input type="range" id="priority-slider" min="0" max="100" value="50">
+              <span class="small-text">Eco</span>
+            </div>
+          </div>
+          <div class="options-group">
+            <h3>Menu Policy</h3>
+            <div class="radio-group">
+              <label><input type="radio" name="menuPolicy" value="meat" checked> Meat</label>
+              <label><input type="radio" name="menuPolicy" value="veg"> Veg</label>
+              <label><input type="radio" name="menuPolicy" value="vegan"> Vegan</label>
+            </div>
+          </div>
+          <button id="close-office-btn" class="primary-btn mt-1">Close</button>
+        </div>
+      </div>
+
+      <div id="kitchen-modal" class="screen modal-screen hidden">
+        <div class="glass-panel">
+          <h2>Kitchen Controls</h2>
+          <div id="kitchen-report" class="summary-box hidden">
+            <h3>Yesterday's Kitchen</h3>
+            <p>Cooked: <span id="kit-cooked">0</span> | Served: <span id="kit-served">0</span></p>
+            <p>Leftover: <span id="kit-leftover">0</span> | Waste Cost: $<span id="kit-waste-cost">0</span></p>
+          </div>
+          <p>Efficiency: <strong id="efficiency-display">85%</strong></p>
+          
+          <div class="options-group">
+            <h3>Meals to Cook Today</h3>
+            <div class="input-group">
+              <input type="number" id="meals-input" value="50" min="0" max="200" />
+            </div>
+          </div>
+
+          <div class="options-group">
+            <h3>Portion Size</h3>
+            <div class="radio-group">
+              <label><input type="radio" name="portionSize" value="small"> Small</label>
+              <label><input type="radio" name="portionSize" value="normal" checked> Normal</label>
+              <label><input type="radio" name="portionSize" value="large"> Large</label>
+            </div>
+          </div>
+
+          <div class="options-group">
+            <h3>Cooking Style</h3>
+            <div class="radio-group">
+              <label><input type="radio" name="cookingStyle" value="early" checked> Cook Early</label>
+              <label><input type="radio" name="cookingStyle" value="demand"> On Demand</label>
+            </div>
+          </div>
+          <button id="close-kitchen-btn" class="primary-btn mt-1">Close</button>
+        </div>
+      </div>
+
+      <div id="storage-modal" class="screen modal-screen hidden">
+        <div class="glass-panel">
+          <h2>Storage Room</h2>
+          <div class="stock-breakdown summary-box">
+            <h3>Total Stock: <strong id="stock-display">0</strong></h3>
+            <p class="text-green">Fresh: <span id="stock-fresh">0</span></p>
+            <p class="text-yellow">Use Soon: <span id="stock-soon">0</span></p>
+            <p class="text-red">Expired: <span id="stock-expired">0</span></p>
+          </div>
+          <div class="options-group">
+            <h3>Order Stock</h3>
+            <button id="buy-exact-btn" class="secondary-btn">Exact + 10% Safety</button>
+            <button id="buy-bulk-btn" class="secondary-btn">Buy Bulk (100)</button>
+            <button id="buy-emergency-btn" class="secondary-btn">Emergency (50) 2x Cost</button>
+          </div>
+          <div class="options-group">
+            <button id="donate-food-btn" class="secondary-btn text-green">Donate "Use Soon" Food</button>
+          </div>
+          <button id="close-storage-btn" class="primary-btn mt-1">Close</button>
+        </div>
+      </div>
+
+      <div id="serving-modal" class="screen modal-screen hidden">
+        <div class="glass-panel">
+          <h2>Serving Area</h2>
+          <p>Ready to start the day's service?</p>
+          <button id="start-service-btn" class="primary-btn">Start Service</button>
+          <button id="close-serving-btn" class="secondary-btn mt-1">Cancel</button>
+        </div>
+      </div>
+
+    </div>
+  </body>
+</html>
